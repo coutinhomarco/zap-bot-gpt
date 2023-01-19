@@ -1,7 +1,8 @@
 import { create } from 'venom-bot';
 import { Configuration, OpenAIApi } from 'openai';
+import dotenv from 'dotenv';
 
-require('dotenv').config();
+dotenv.config();
 
 const config = new Configuration({
   apiKey: process.env.OPENAI_KEY,
@@ -46,35 +47,45 @@ const getDalleResponse = async (clientText) => {
 };
 
 const commands = (client, message) => {
-  const iaCommands = {
-    davinci3: '/bot',
-    dalle: '/img',
-  };
+  try {
+    const iaCommands = {
+      davinci3: '/bot',
+      dalle: '/img',
+    };
 
-  const firstWord = message.text.substring(0, message.text.indexOf(' '));
+    const firstWord = message.text?.substring(0, message.text.indexOf(' '));
 
-  if (firstWord === iaCommands.davinci3) {
-    const question = message.text.substring(message.text.indexOf(' '));
-    getDavinciResponse(question).then((response) => {
-      client.sendText(
-        message.from === process.env.BOT_NUMBER ? message.to : message.from,
-        response,
-      );
-    });
+    if (firstWord === iaCommands.davinci3) {
+      const question = message.text.substring(message.text.indexOf(' '));
+      getDavinciResponse(question).then((response) => {
+        client.sendText(
+          message.from === process.env.BOT_NUMBER ? message.to : message.from,
+          response,
+        );
+      });
+    }
+    if (firstWord === iaCommands.dalle) {
+      const imgDescription = message.text.substring(message.text.indexOf(' '));
+      getDalleResponse(imgDescription, message).then((imgUrl) => {
+        client.sendImage(
+          message.from === process.env.BOT_NUMBER ? message.to : message.from,
+          imgUrl,
+          imgDescription,
+          'IA DALLE',
+        );
+      });
+    }
+  } catch (error) {
+    console.log(error);
   }
-  const imgDescription = message.text.substring(message.text.indexOf(' '));
-  getDalleResponse(imgDescription, message).then((imgUrl) => {
-    client.sendImage(
-      message.from === process.env.BOT_NUMBER ? message.to : message.from,
-      imgUrl,
-      imgDescription,
-      'IA DALLE',
-    );
-  });
 };
 
 async function start(client) {
-  client.onAnyMessage((message) => commands(client, message));
+  try {
+    client.onAnyMessage((message) => commands(client, message));
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 create({
